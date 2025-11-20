@@ -1,7 +1,7 @@
 use std::{fs::create_dir_all, sync::Arc};
 use std::path::PathBuf;
 
-use power_pizza_bot::spreaker::{SimpleEpisode, SpreakerDownloader, SpreakerListResponse, SpreakerResponse};
+use power_pizza_bot::spreaker::{SimpleEpisode, SpreakerDownloader, SpreakerResponse};
 use reqwest::Client;
 use tokio_stream::StreamExt;
 use lazy_static::lazy_static;
@@ -12,7 +12,7 @@ lazy_static! {
 
 
 #[tokio::main]
-async fn main() -> Result<(), Box<(dyn std::error::Error + 'static)>> {
+async fn main() -> Result<(), Box<dyn std::error::Error + 'static>> {
     pretty_env_logger::init();
     let cli = Arc::new(Client::new());
 

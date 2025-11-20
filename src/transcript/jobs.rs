@@ -5,7 +5,6 @@ use log::debug;
 #[allow(unused_imports)]
 use log::{error, info, warn};
 use futures_util::stream::StreamExt;
-use reqwest::{RequestBuilder, Url};
 
 use crate::config::CONFIG;
 use crate::db::DB;
