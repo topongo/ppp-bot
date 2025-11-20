@@ -155,7 +155,7 @@ async fn reply_inner(bot: &Bot, msg: &Message, cmd: Command) -> Result<(), BotEr
                 let response = results
                     .iter()
                     .map(|r| format!(
-                            "{}: {}", 
+                            "{}: {}",
                             markdown::escape(&r.episode.id.to_string()),
                             markdown::link(&format!("https://www.spreaker.com/episode/{}", r.episode.id), &markdown::escape(&r.episode.title))
                     ))
@@ -180,7 +180,7 @@ async fn reply_inner(bot: &Bot, msg: &Message, cmd: Command) -> Result<(), BotEr
                 results
                     .iter()
                     .map(|r| format!(
-                            "{}: {}", 
+                            "{}: {}",
                             markdown::escape(&r.episode.id.to_string()),
                             markdown::link(&format!("https://www.spreaker.com/episode/{}", r.episode.id), &markdown::escape(&r.episode.title))
                     ))
@@ -228,7 +228,7 @@ async fn reply_inner(bot: &Bot, msg: &Message, cmd: Command) -> Result<(), BotEr
                         .join("\n\n")
                 );
                 paginate_response(bot, msg.chat.id, response).await?;
-            } 
+            }
         }
         Command::Beta => {
             info!("user {} requested beta access", represent_user(&msg.from));
@@ -271,7 +271,7 @@ async fn reply_inner(bot: &Bot, msg: &Message, cmd: Command) -> Result<(), BotEr
             };
 
             bot.send_message(msg.chat.id, format!(
-                "{}\n{}", 
+                "{}\n{}",
                 markdown::escape(&format!("{} ({}):", cmd, list.len())),
                 list.iter().map(|u| format!(
                     "{} \\({}\\)",
@@ -283,7 +283,7 @@ async fn reply_inner(bot: &Bot, msg: &Message, cmd: Command) -> Result<(), BotEr
                 )).collect::<Vec<String>>().join("\n")
             )).await?;
         }
-        Command::BetaAccept(query) => { 
+        Command::BetaAccept(query) => {
             let id = query.parse::<i64>().map_err(|_| BotError::MalformedQuery)?;
             let mut user = DB.get::<BotUser>(id).await?.ok_or(BotError::MalformedQuery)?;
             if user.beta {

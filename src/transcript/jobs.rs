@@ -106,7 +106,7 @@ impl JobManager {
         drop(_permit);
         Ok((id, t))
     }
-    
+
     async fn _run_download(id: u32, cli: Arc<reqwest::Client>, sem: Arc<Semaphore>) -> Result<u32, JobManagerError> {
         let _permit = sem.acquire().await.unwrap();
         info!("downloading episode {}", id);

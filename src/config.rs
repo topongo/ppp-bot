@@ -102,7 +102,7 @@ impl Config {
                 toml::from_str(&buf).expect("Failed to parse config file")
             }
             Err(_) => {
-                let mut f = std::fs::File::create("config.toml").expect("Failed to create config file");           
+                let mut f = std::fs::File::create("config.toml").expect("Failed to create config file");
                 let d = Self::default();
                 f.write_all(toml::to_string(&d).expect("Failed to serialize default config").as_bytes()).expect("Failed to write default config");
                 eprintln!("Failed to open config file, writing default config");
