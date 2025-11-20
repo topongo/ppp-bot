@@ -1,6 +1,6 @@
 use std::fmt::{self, Display, Formatter};
 
-use super::search::SearchError;
+use super::{interaction::InteractionError, search::SearchError};
 
 #[derive(Debug)]
 pub enum BotError {
@@ -10,6 +10,7 @@ pub enum BotError {
     NotImplemented,
     SearchError(SearchError),
     MalformedQuery,
+    Interaction(InteractionError),
 }
 
 impl BotError {
@@ -29,6 +30,7 @@ impl BotError {
                 BotError::NotImplemented => "questa funzionalità non è implementata",
                 BotError::SearchError(e) => e.respond_client(),
                 BotError::MalformedQuery => "query malformata",
+                BotError::Interaction(_) => "errore interazione",
             },
         );
         #[cfg(debug_assertions)]
@@ -66,6 +68,12 @@ impl From<teloxide::RequestError> for BotError {
 impl From<SearchError> for BotError {
     fn from(e: SearchError) -> Self {
         BotError::SearchError(e)
+    }
+}
+
+impl From<InteractionError> for BotError {
+    fn from(e: InteractionError) -> Self {
+        BotError::Interaction(e)
     }
 }
 

@@ -16,7 +16,7 @@ services:
   db:
     image: mongo
     volumes:
-      - mongodb_data:/data/db
+      - ./db:/data/db
     ports:
       - 27017:27017
     environment:
@@ -41,7 +41,5 @@ services:
       - ./transcripts:/app/transcripts
       - ./config.docker.toml:/app/config.toml
 
-volumes:
-  mongodb_data:
-      
-
+# volumes:
+#   mongodb_data:

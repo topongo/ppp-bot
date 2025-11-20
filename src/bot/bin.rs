@@ -2,9 +2,10 @@ use std::{fmt::Display, time::Instant};
 
 use log::{debug, error, info, trace};
 use regex::Regex;
-use teloxide::{prelude::Requester, repls::CommandReplExt, types::{ChatId, Message, ParseMode, User, UserId}, utils::{command::BotCommands, markdown}, Bot};
+use teloxide::{dispatching::{HandlerExt, UpdateFilterExt, UpdateHandler}, dptree, prelude::{Dispatcher, Requester}, repls::CommandReplExt, types::{CallbackQuery, ChatId, Message, ParseMode, User, UserId}, utils::{command::BotCommands, markdown}, Bot};
+use teloxide::prelude::Update;
 use teloxide::payloads::SendMessageSetters;
-use power_pizza_bot::{bot::strings::HELP_MESSAGE, config::CONFIG};
+use power_pizza_bot::{bot::{strings::HELP_MESSAGE, Interaction}, config::CONFIG};
 use power_pizza_bot::{bot::{BotError, BotUser}, db::DB};
 
 #[tokio::main]
@@ -15,7 +16,12 @@ async fn main() {
 
     let bot = Bot::new(CONFIG.tg.token.clone());
     log::info!("bot created, startring...");
-    Command::repl(bot, reply).await;
+
+    let schema = Update::filter_callback_query()
+        .branch(teloxide::filter_command::<Command, _>().branch(dptree::endpoint(reply)))
+        .branch(dptree::endpoint(callback_handler));
+
+    Dispatcher::builder(bot, schema).build().dispatch().await;
 }
 
 fn represent_user(u: &Option<User>) -> String {
@@ -28,7 +34,9 @@ fn represent_user(u: &Option<User>) -> String {
 #[derive(BotCommands, Clone)]
 #[command(description = "Sono supportati i seguenti messaggi:")]
 enum Command {
-    #[command(rename = "help", aliases = ["start"])]
+    #[command(rename = "start")]
+    Start,
+    #[command(rename = "help")]
     Help,
     #[command(rename = "s", aliases = ["search", "c", "cerca"])]
     Search(String),
@@ -44,6 +52,8 @@ enum Command {
     BetaWaitList,
     #[command(rename = "betaaccept")]
     BetaAccept(String),
+    #[command(rename = "cancel")]
+    Cancel,
 }
 
 impl Command {
@@ -59,6 +69,7 @@ impl Command {
 impl Display for Command {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Command::Start => write!(f, "start"),
             Command::Help => write!(f, "help"),
             Command::Search(q) => write!(f, "search {}", q),
             Command::SearchAdvanced(q) => write!(f, "searchAdvanced {}", q),
@@ -67,6 +78,7 @@ impl Display for Command {
             Command::BetaList => write!(f, "betaList"),
             Command::BetaWaitList => write!(f, "betaWaitList"),
             Command::BetaAccept(q) => write!(f, "betaAccept {}", q),
+            Command::Cancel => write!(f, "cancel"),
         }
     }
 }
@@ -138,6 +150,42 @@ async fn reply_inner(bot: &Bot, msg: &Message, cmd: Command) -> Result<(), BotEr
         return Ok(());
     }
     match cmd {
+        Command::Start => {
+            if let Some(u) = msg.from.clone() {
+                let u = BotUser::from(&u);
+                match DB.interaction_get(&msg.chat.id, &u).await? {
+                    Some(int) => {
+                        info!("interaction already exists for user {}", represent_user(&msg.from));
+                        int.already_exists(bot).await?;
+                    }
+                    None => {
+                        info!("creating new interaction for user {}", represent_user(&msg.from));
+                        let int = Interaction::start(msg.chat.id, u);
+                        let int = int.notify(bot).await?;
+                        DB.interaction_save(int).await?;
+                    }
+                }
+            } else {
+                bot.send_message(msg.chat.id, "C'è stato un errore nel processare la tua richiesta").await?;
+            }
+        }
+        Command::Cancel => {
+            if let Some(u) = msg.from.clone() {
+                let u = BotUser::from(&u);
+                match DB.interaction_get(&msg.chat.id, &u).await? {
+                    Some(int) => {
+                        info!("cancelling interaction for user {}", represent_user(&msg.from));
+                        int.cancel(bot).await?;
+                    }
+                    None => {
+                        info!("no interaction to cancel for user {}", represent_user(&msg.from));
+                        bot.send_message(msg.chat.id, "Non c'è nessuna interazione da annullare").await?;
+                    }
+                }
+            } else {
+                bot.send_message(msg.chat.id, "C'è stato un errore nel processare la tua richiesta").await?;
+            }
+        }
         Command::Help => {
             bot.send_message(msg.chat.id, &*HELP_MESSAGE)
                 .parse_mode(ParseMode::MarkdownV2)
@@ -303,3 +351,21 @@ async fn reply_inner(bot: &Bot, msg: &Message, cmd: Command) -> Result<(), BotEr
 
     Ok(())
 }
+
+
+async fn callback_handler(bot: Bot, query: CallbackQuery) -> Result<(), teloxide::RequestError> {
+    info!("received callback query: {:?}", query);
+    // match reply_inner(&bot, &msg, cmd.clone()).await {
+    //     Ok(_) => info!("successfully replied to {} from {}", msg.id, represent_user(&msg.from)),
+    //     Err(e) => {
+    //         error!("failed to reply to message {} from {}: {:?}", msg.id, represent_user(&msg.from), e);
+    //         bot.send_message(msg.chat.id, e.respond_client()).await?;
+    //     }
+    // }
+    Ok(())
+}
+
+async fn callback_handler_inner(bot: Bot, query: String, msg: Message) -> Result<(), BotError> {
+    todo!()
+}
+
