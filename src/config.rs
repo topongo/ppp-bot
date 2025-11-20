@@ -1,9 +1,9 @@
-use std::{io::{Read, Write}, path::Path, process::exit};
+use std::{fs::read_to_string, io::{Read, Write}, path::Path, process::exit};
 
 use lazy_static::lazy_static;
-use log::debug;
+use log::{debug, error};
 use mongodb::options::ClientOptions;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Config {
@@ -17,6 +17,7 @@ pub struct DbConfig {
     pub host: String,
     pub port: u16,
     pub user: String,
+    #[serde(default = "db_password_from_env_or_file")]
     pub password: String,
 }
 
@@ -46,8 +47,19 @@ impl Default for DbConfig {
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct TgConfig {
+    #[serde(default = "token_from_env")]
     pub token: String,
     pub admin: String,
+}
+
+fn token_from_env() -> String {
+    std::env::var("PPP_TOKEN").expect("cannot get PPP_TOKEN from env")
+}
+
+fn db_password_from_env_or_file() -> String {
+    std::env::var("PPP_DB_PASSWORD")
+        .or_else(|_| std::env::var("PPP_DB_PASSWORD_FILE").map(|f| read_to_string(f).expect("could not read db password file")))
+        .expect("could not get db password from environment")
 }
 
 #[derive(Serialize, Deserialize, Debug)]
