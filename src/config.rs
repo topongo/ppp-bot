@@ -53,12 +53,22 @@ pub struct TgConfig {
 }
 
 fn token_from_env() -> String {
-    std::env::var("PPP_TOKEN").expect("cannot get PPP_TOKEN from env")
+    std::env::var("PPP_TOKEN")
+        .or_else(|_| std::env::var("PPP_TOKEN_FILE").map(|f| read_to_string(f)
+            .expect("could not read token from file")
+            .trim()
+            .to_string()
+        ))
+        .expect("could not get token from environment")
 }
 
 fn db_password_from_env_or_file() -> String {
     std::env::var("PPP_DB_PASSWORD")
-        .or_else(|_| std::env::var("PPP_DB_PASSWORD_FILE").map(|f| read_to_string(f).expect("could not read db password file")))
+        .or_else(|_| std::env::var("PPP_DB_PASSWORD_FILE").map(|f| read_to_string(f)
+            .expect("could not read db password file")
+            .trim()
+            .to_string()
+        ))
         .expect("could not get db password from environment")
 }
 
